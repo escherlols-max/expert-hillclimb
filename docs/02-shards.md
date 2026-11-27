@@ -11,6 +11,7 @@ Each shard is a file named `expert_L{layer}_E{expert}.npz` with these arrays:
 - `x_heldout`, `w_heldout`, `g_heldout`
 - `W_gate`, `W_up`, `W_down`
 - `pass_train`, `pass_heldout`
+- `g_scale`, `gate_cap`, `up_cap` (scalars)
 
 Each shard comes with a `meta.json` holding the sha256, round, pillar, token counts, the source text set, and the host model revision.
 

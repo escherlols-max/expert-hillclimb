@@ -9,7 +9,7 @@ import argparse
 
 import numpy as np
 
-from expert_math import expert_forward
+from expert_math import expert_forward, GATE_CAP, UP_CAP
 
 
 def main():
@@ -39,8 +39,9 @@ def main():
         "x_train": x[:cut], "w_train": w[:cut], "g_train": g[:cut],
         "x_heldout": x[cut:], "w_heldout": w[cut:], "g_heldout": g[cut:],
         "pass_train": np.zeros(cut, np.int8), "pass_heldout": np.zeros(a.n - cut, np.int8),
+        "g_scale": np.float32(1.0), "gate_cap": np.float32(GATE_CAP), "up_cap": np.float32(UP_CAP),
     })
-    out = {k: (v.astype(np.float16) if v.dtype.kind == "f" else v) for k, v in out.items()}
+    out = {k: (v.astype(np.float16) if v.dtype.kind == "f" and v.ndim else v) for k, v in out.items()}
     np.savez(a.out, **out)
     print("wrote", a.out, {k: v.shape for k, v in out.items()})
 

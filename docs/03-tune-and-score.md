@@ -26,7 +26,7 @@ Report everything you tried in `report.json` (`notes` field). Failed ideas are u
     python tools/make_practice_shard.py --out practice.npz
     python tools/tune_expert.py --shard practice.npz --out ov.npz --steps 300
     python tools/score_expert.py --shard practice.npz --overlay ov.npz
-    # score=0.381 drift=0.0067 rel_delta=0.0465 VALID
+    # score=0.294 drift=0.0052 rel_delta=0.0408 VALID
 
-With `--lam 1` the score jumps to 5.1, but drift goes to 1.94: INVALID. The drift cap is the whole
+With `--lam 1` the score jumps to 1.74, but drift goes to 0.28: INVALID. The drift cap is the whole
 game. Find more gain per unit of drift.
