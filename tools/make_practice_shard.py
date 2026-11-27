@@ -3,7 +3,10 @@
 The hidden "ideal" expert is the base expert plus a small random change. g is the gradient of
 0.5*||f(x) - f_ideal(x)||^2, so a good tuner moves toward f_ideal and gets a positive score.
 
-    python tools/make_practice_shard.py --out practice.npz [--d 256 --h 128 --n 8000 --seed 0]
+    python tools/make_practice_shard.py --out practice.npz [--d 256 --h 128 --n 8000 --seed 0] [--family glm5]
+
+--family inkling2 (default) uses the softcapped Inkling expert; --family glm5 uses the plain silu SwiGLU of GLM-5.x
+and writes `family` = "glm5" into the shard (no gate_cap / up_cap).
 """
 import argparse
 
@@ -19,6 +22,7 @@ def main():
     ap.add_argument("--h", type=int, default=128)
     ap.add_argument("--n", type=int, default=8000)
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--family", default="inkling2", choices=["inkling2", "glm5"])
     a = ap.parse_args()
     r = np.random.default_rng(a.seed)
     s = 1.0 / np.sqrt(a.d)
@@ -30,8 +34,8 @@ def main():
     W_ideal = {k: v + 0.03 * r.normal(0, v.std(), v.shape) for k, v in W.items()}
     x = r.normal(0, 1, (a.n, a.d))
     w = r.uniform(0.05, 0.5, a.n)
-    f0 = expert_forward(x, W["W_gate"], W["W_up"], W["W_down"])
-    fi = expert_forward(x, W_ideal["W_gate"], W_ideal["W_up"], W_ideal["W_down"])
+    f0 = expert_forward(x, W["W_gate"], W["W_up"], W["W_down"], family=a.family)
+    fi = expert_forward(x, W_ideal["W_gate"], W_ideal["W_up"], W_ideal["W_down"], family=a.family)
     g = (f0 - fi) + 0.05 * r.normal(0, (f0 - fi).std(), f0.shape)  # noisy gradient
     cut = int(0.8 * a.n)
     out = {k: v.astype(np.float16) for k, v in W.items()}
@@ -39,8 +43,12 @@ def main():
         "x_train": x[:cut], "w_train": w[:cut], "g_train": g[:cut],
         "x_heldout": x[cut:], "w_heldout": w[cut:], "g_heldout": g[cut:],
         "pass_train": np.zeros(cut, np.int8), "pass_heldout": np.zeros(a.n - cut, np.int8),
-        "g_scale": np.float32(1.0), "gate_cap": np.float32(GATE_CAP), "up_cap": np.float32(UP_CAP),
+        "g_scale": np.float32(1.0),
     })
+    if a.family == "inkling2":
+        out.update(gate_cap=np.float32(GATE_CAP), up_cap=np.float32(UP_CAP))
+    else:
+        out["family"] = np.array(a.family)
     out = {k: (v.astype(np.float16) if v.dtype.kind == "f" and v.ndim else v) for k, v in out.items()}
     np.savez(a.out, **out)
     print("wrote", a.out, {k: v.shape for k, v in out.items()})

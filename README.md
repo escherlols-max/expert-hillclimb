@@ -18,6 +18,8 @@ There are two kinds of work:
 
 `thinkingmachines/Inkling-2-Mini` (Apache-2.0): hidden size 2304, 24 layers, 128 routed experts per layer (top-8 routing, no shared expert). Each expert is a SwiGLU block 2304 -> 1152 -> 2304. Layers 6-17 form a looped core that runs 3 passes per token, so experts there see each token up to 3 times.
 
+GLM-5.x experts (family `glm5`: hidden 6144, 256 routed experts per layer, plain silu SwiGLU 6144 -> 2048 -> 6144) are also supported by the tools, including weight-space edits such as task vectors from GLM-5.2. See `docs/08-weight-space.md`.
+
 ## Quick start
 
 1. Read `docs/01-concepts.md` (10 minutes).

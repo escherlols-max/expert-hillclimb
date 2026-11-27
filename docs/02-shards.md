@@ -12,6 +12,7 @@ Each shard is a file named `expert_L{layer}_E{expert}.npz` with these arrays:
 - `W_gate`, `W_up`, `W_down`
 - `pass_train`, `pass_heldout`
 - `g_scale`, `gate_cap`, `up_cap` (scalars)
+- `family` (GLM-5.x shards only: the string `glm5`; those shards have no `gate_cap` / `up_cap`, see `docs/08-weight-space.md`)
 
 Each shard comes with a `meta.json` holding the sha256, round, pillar, token counts, the source text set, and the host model revision.
 

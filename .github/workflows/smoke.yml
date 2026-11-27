@@ -8,14 +8,27 @@ jobs:
       - uses: actions/setup-python@v5
         with: {python-version: "3.11"}
       - run: pip install numpy torch --index-url https://download.pytorch.org/whl/cpu
-      - name: practice loop
+      - name: practice loop (both expert families)
         working-directory: tools
         run: |
-          python make_practice_shard.py --out /tmp/p.npz
-          python tune_expert.py --shard /tmp/p.npz --out /tmp/o.npz --steps 300 --threads 2
-          python score_expert.py --shard /tmp/p.npz --overlay /tmp/o.npz --report /tmp/r.json
-          python -c "import json; r=json.load(open('/tmp/r.json')); assert r['valid'] and r['score_heldout']>0, r"
+          for fam in inkling2 glm5; do
+            python make_practice_shard.py --family $fam --out /tmp/p_$fam.npz
+            python tune_expert.py --shard /tmp/p_$fam.npz --out /tmp/o_$fam.npz --steps 300 --threads 2
+            python score_expert.py --shard /tmp/p_$fam.npz --overlay /tmp/o_$fam.npz --report /tmp/r_$fam.json
+            python -c "import json,sys; r=json.load(open(sys.argv[1])); assert r['valid'] and r['score_heldout']>0, r" /tmp/r_$fam.json
+          done
           python fit_procrustes.py --selftest
+      - name: weight-space tools
+        working-directory: tools
+        run: |
+          python weight_space.py selftest
+          python extract_expert.py --selftest
+          python make_practice_shard.py --family glm5 --seed 1 --out /tmp/p1.npz
+          python weight_space.py lowrank --shard /tmp/p_glm5.npz --overlay /tmp/o_glm5.npz --rank 8 --out /tmp/lr.npz
+          python score_expert.py --shard /tmp/p_glm5.npz --overlay /tmp/lr.npz --report /tmp/r_lr.json
+          python weight_space.py taskvec --shard /tmp/p_glm5.npz --base /tmp/p1.npz --sweep=0.02,0.1 --fit --out /tmp/tv.npz
+          python score_expert.py --shard /tmp/p_glm5.npz --overlay /tmp/tv.npz --report /tmp/r_tv.json
+          python -c "import json,sys; r=json.load(open(sys.argv[1])); assert r['valid'] and r['score_heldout']>0, r" /tmp/r_lr.json
       - name: no em dashes in text
         run: |
           python - <<'PY'

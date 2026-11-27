@@ -13,9 +13,11 @@ import torch
 GATE_CAP, UP_CAP = 4.0, 25.0
 
 
-def fwd(x, Wg, Wu, Wd, gc=GATE_CAP, uc=UP_CAP):
-    """Inkling expert: cap(gate) * sigmoid(gate) * cap(up), then down."""
+def fwd(x, Wg, Wu, Wd, gc=GATE_CAP, uc=UP_CAP, family="inkling2"):
+    """inkling2: cap(gate) * sigmoid(gate) * cap(up), then down.  glm5: silu(gate) * up, then down (no caps)."""
     gate, up = x @ Wg.T, x @ Wu.T
+    if family == "glm5":
+        return (torch.nn.functional.silu(gate) * up) @ Wd.T
     return (torch.tanh(gate / gc) * gc * torch.sigmoid(gate) * (torch.tanh(up / uc) * uc)) @ Wd.T
 
 
@@ -43,6 +45,10 @@ def main():
         g = g * float(z["g_scale"])
     gc = float(z["gate_cap"]) if "gate_cap" in z.files else GATE_CAP
     uc = float(z["up_cap"]) if "up_cap" in z.files else UP_CAP
+    fam = str(z["family"]) if "family" in z.files else "inkling2"
+    if fam not in ("inkling2", "glm5"):
+        raise SystemExit(f"unknown expert family {fam!r}")
+    print("family", fam)
     names = ("W_gate", "W_up", "W_down")
     W0 = [t(k) for k in names]
     train = set(a.only.split(",")) if a.only else set(names)
@@ -50,14 +56,14 @@ def main():
     opt = torch.optim.Adam([p for p in W if p.requires_grad], lr=a.lr)
     n0 = sum(float((p ** 2).sum()) for p in W0)
     with torch.no_grad():
-        f0_all = fwd(x, *W0, gc, uc)
+        f0_all = fwd(x, *W0, gc, uc, fam)
     f0_scale = float((f0_all ** 2).sum(1).mean())
     wsum = float(w.mean())
 
     for step in range(a.steps):
         idx = torch.randint(0, len(x), (min(a.batch, len(x)),))
         xb, wb, gb, f0 = x[idx], w[idx], g[idx], f0_all[idx]
-        f = fwd(xb, *W, gc, uc)
+        f = fwd(xb, *W, gc, uc, fam)
         lin = (wb * (gb * (f - f0)).sum(1)).mean() / wsum
         drift = ((f - f0) ** 2).sum(1).mean() / f0_scale
         anc = sum(((p - q) ** 2).sum() for p, q in zip(W, W0)) / n0
