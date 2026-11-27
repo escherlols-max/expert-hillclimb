@@ -17,4 +17,9 @@ jobs:
           python -c "import json; r=json.load(open('/tmp/r.json')); assert r['valid'] and r['score_heldout']>0, r"
           python fit_procrustes.py --selftest
       - name: no em dashes in text
-        run: "! grep -rnP '\x{2014}' --include='*.md' --include='*.py' ."
+        run: |
+          python - <<'PY'
+          import pathlib, sys
+          bad = [str(p) for p in pathlib.Path('.').rglob('*') if p.suffix in ('.md', '.py') and chr(0x2014) in p.read_text(encoding='utf-8')]
+          print(bad); sys.exit(1 if bad else 0)
+          PY
