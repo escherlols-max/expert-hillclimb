@@ -12,6 +12,10 @@ npz that score_expert.py accepts. Held-out rows are never used here: score the r
     python tools/weight_space.py taskvec  --shard S53.npz --base glm52_L40_E17.npz --sweep=-0.5,-0.25,0.25,0.5,1 --fit --out ov.npz
     python tools/weight_space.py selftest
 
+--sidecar (any command): the edited weights become a SIDECAR expert instead of an in-place change. The parent stays
+untouched and the overlay gets the scalar a (default: the closed-form best strength on the train rows under the
+branch-drift cap, or --a). Score it with score_sidecar.py (docs/09-sidecars.md).
+
 Task vector: W = W53 + alpha * (W53 - W52), where W52 is the same (layer, expert) of GLM-5.2 (same shapes; extract it with
 extract_expert.py). alpha > 0 extrapolates along the 5.2 -> 5.3 update, alpha < 0 moves back toward 5.2.
 """
@@ -19,7 +23,7 @@ import argparse, json, sys
 
 import numpy as np
 
-from expert_math import MAX_DRIFT, MAX_REL_DELTA, evaluate, load_shard, weights
+from expert_math import MAX_BRANCH_DRIFT, MAX_DRIFT, MAX_REL_DELTA, best_sidecar_strength, evaluate, evaluate_sidecar, load_shard, weights
 
 NAMES = ("W_gate", "W_up", "W_down")
 
@@ -104,6 +108,8 @@ def main(argv=None):
         p.add_argument("--shard", required=True)
         p.add_argument("--out", required=True)
         p.add_argument("--fit", action="store_true", help="shrink the edit toward W0 until it is valid on the train rows")
+        p.add_argument("--sidecar", action="store_true", help="write the edited expert as a sidecar overlay (with scalar a)")
+        p.add_argument("--a", type=float, default=None, help="--sidecar: strength a (default: best on train rows)")
         if name == "lowrank":
             p.add_argument("--overlay", required=True, help="tuned weights whose delta is compressed")
             p.add_argument("--rank", type=int, required=True)
@@ -151,12 +157,28 @@ def main(argv=None):
                 best = (r, Wa)
         if best is None:
             raise SystemExit("no alpha gave a valid edit on the train rows; try smaller |alpha| or --fit")
+        if a.sidecar:
+            return save_sidecar(a.out, shard, best[1], a.a, dict(best[0], chosen=True))
         save_overlay(a.out, best[1], dict(best[0], chosen=True))
         return
+    if a.sidecar:
+        return save_sidecar(a.out, shard, W1, a.a, {"cmd": a.cmd})
     t = 1.0
     if a.fit:
         t, W1 = fit_to_limits(shard, W0, W1)
     save_overlay(a.out, W1, report(shard, W1, {"cmd": a.cmd, "shrink": t}))
+
+
+def save_sidecar(path, shard, W, a_val=None, extra=None):
+    """Write W as a sidecar overlay; a defaults to the closed-form best strength on the TRAIN rows."""
+    if a_val is None:
+        a_val = best_sidecar_strength(shard, W, "train")
+    s, bd, sn = evaluate_sidecar(shard, W, a_val, "train")
+    np.savez(path, **{k: np.ascontiguousarray(w, np.float32) for k, w in zip(NAMES, W)}, a=np.float32(a_val))
+    info = {"kind": "sidecar", "a": a_val, "tanh_a": float(np.tanh(a_val)), "score_norm_train": sn, "score_train": s,
+            "branch_drift_train": bd, "valid_on_train": bd <= MAX_BRANCH_DRIFT}
+    info.update(extra or {})
+    print(json.dumps(info))
 
 
 def selftest():
@@ -173,6 +195,16 @@ def selftest():
     assert np.allclose(np.linalg.svd(svd_rescale(A, 2, 2.0), compute_uv=False)[:2], np.sort(S[:2] * 2)[::-1], rtol=1e-4)
     assert all(np.allclose(x, 0.25 * a + 0.75 * b) for x, a, b in zip(linear_merge([W0, W1], [0.25, 0.75]), W0, W1))
     assert all(np.allclose(x, a + 0.5 * (a - b)) for x, a, b in zip(task_vector(W1, W0, 0.5), W1, W0))
+    # closed-form sidecar strength: on a toy shard the chosen a sits on 90% of the branch-drift cap with a positive gain
+    E0 = (r.normal(size=(16, 30)).astype(np.float32) * 0.2, r.normal(size=(16, 30)).astype(np.float32) * 0.2,
+          r.normal(size=(30, 16)).astype(np.float32) * 0.2)
+    E1 = tuple(e + 0.1 * r.normal(size=e.shape).astype(np.float32) for e in E0)
+    sh = {"W_gate": E0[0], "W_up": E0[1], "W_down": E0[2], "gate_cap": 4.0, "up_cap": 25.0, "family": "glm5",
+          "x_train": r.normal(size=(300, 30)).astype(np.float32), "w_train": np.full(300, 0.3, np.float32),
+          "g_train": r.normal(size=(300, 30)).astype(np.float32)}
+    av = best_sidecar_strength(sh, E1, "train")
+    s_, bd_, _ = evaluate_sidecar(sh, E1, av, "train")
+    assert s_ > 0 and abs(bd_ - 0.9 * MAX_BRANCH_DRIFT) < 1e-4, (s_, bd_)
     print("selftest ok")
 
 

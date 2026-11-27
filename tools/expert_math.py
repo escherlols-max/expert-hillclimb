@@ -96,3 +96,52 @@ def evaluate(shard, W_new, split="heldout", batch=4096, with_norm=False):
 
 MAX_DRIFT = 0.05
 MAX_REL_DELTA = 0.10
+
+
+# ------------------------------------------------------------------ sidecar experts
+# A sidecar is an extra expert that fires on exactly the tokens routed to its parent and adds
+#     moe_out += w_parent * tanh(a) * f_sc(x)
+# while the parent expert stays untouched. First-order loss change: dL = sum_t w_t tanh(a) <g_t, f_sc(x_t)>.
+
+MAX_BRANCH_DRIFT = 0.05
+
+
+def load_sidecar(path):
+    """-> ((W_gate, W_up, W_down), a) from a sidecar overlay npz (keys W_gate, W_up, W_down, a)."""
+    z = np.load(path)
+    if "a" not in z.files:
+        raise ValueError(f"{path} has no scalar `a`: not a sidecar overlay")
+    return weights({k: z[k] for k in z.files}), float(z["a"])
+
+
+def evaluate_sidecar(shard, W_sc, a, split="heldout", batch=4096):
+    """Return (score, branch_drift, score_norm) of a sidecar on one split.
+        score        = -sum_t w_t tanh(a) <g_t, f_sc(x_t)> / sum_t w_t
+        score_norm   = -sum_t w_t tanh(a) <g_t, f_sc(x_t)> / ( ||w g||_F * ||f0||_F ),  f0 = the parent's own output
+        branch_drift = ||tanh(a) f_sc||_F^2 / ||f0||_F^2
+    There is no weight-delta limit: the sidecar may differ arbitrarily from its init."""
+    W0 = weights(shard)
+    t = float(np.tanh(a))
+    x, w, g = shard["x_" + split], shard["w_" + split], shard["g_" + split]
+    dL = num = den = wg2 = 0.0
+    for i in range(0, len(x), batch):
+        xb = x[i:i + batch]
+        f0 = forward_shard(shard, xb, W0)
+        fs = t * forward_shard(shard, xb, W_sc)
+        wgb = w[i:i + batch, None] * g[i:i + batch]
+        dL += float(np.sum(wgb * fs))
+        num += float(np.sum(fs * fs))
+        den += float(np.sum(f0 * f0))
+        wg2 += float(np.sum(wgb * wgb))
+    return -dL / float(np.sum(w)), num / max(den, 1e-12), -dL / max((wg2 ** 0.5) * (den ** 0.5), 1e-30)
+
+
+def best_sidecar_strength(shard, W_sc, split="train", margin=0.9):
+    """Closed form: the gain is linear in t = tanh(a) and branch_drift is t^2 * D, so the best |t| under the cap is
+    sqrt(margin * cap / D), with the sign that makes the gain positive. Returns a (0.0 if the sidecar has no signal)."""
+    s1, d1, _ = evaluate_sidecar(shard, W_sc, float(np.arctanh(0.5)), split)  # at t = 0.5
+    D = d1 / 0.25
+    if D <= 0 or s1 == 0:
+        return 0.0
+    t = min((margin * MAX_BRANCH_DRIFT / D) ** 0.5, 0.999)
+    return float(np.arctanh(t if s1 > 0 else -t))

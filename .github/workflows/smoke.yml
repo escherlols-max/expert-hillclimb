@@ -29,6 +29,17 @@ jobs:
           python weight_space.py taskvec --shard /tmp/p_glm5.npz --base /tmp/p1.npz --sweep=0.02,0.1 --fit --out /tmp/tv.npz
           python score_expert.py --shard /tmp/p_glm5.npz --overlay /tmp/tv.npz --report /tmp/r_tv.json
           python -c "import json,sys; r=json.load(open(sys.argv[1])); assert r['valid'] and r['score_heldout']>0, r" /tmp/r_lr.json
+      - name: sidecar track
+        working-directory: tools
+        run: |
+          for fam in inkling2 glm5; do
+            python tune_sidecar.py --shard /tmp/p_$fam.npz --out /tmp/sc_$fam.npz --steps 300 --threads 2
+            python score_sidecar.py --shard /tmp/p_$fam.npz --overlay /tmp/sc_$fam.npz --report /tmp/rs_$fam.json
+            python -c "import json,sys; r=json.load(open(sys.argv[1])); assert r['valid'] and r['score_norm_heldout']>0, r" /tmp/rs_$fam.json
+          done
+          python weight_space.py lowrank --shard /tmp/p_glm5.npz --overlay /tmp/o_glm5.npz --rank 8 --sidecar --out /tmp/lrs.npz
+          python score_sidecar.py --shard /tmp/p_glm5.npz --overlay /tmp/lrs.npz --report /tmp/r_lrs.json
+          python -c "import json,sys; r=json.load(open(sys.argv[1])); assert r['valid'] and r['score_norm_heldout']>0, r" /tmp/r_lrs.json
       - name: no em dashes in text
         run: |
           python - <<'PY'
