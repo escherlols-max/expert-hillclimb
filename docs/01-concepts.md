@@ -36,8 +36,18 @@ close to the original behaviour:
 
 ## Score (computed on the HELD-OUT rows, never the train rows)
 
-    score  =  - dL_heldout / sum_t w_t        (higher is better)
+The leaderboard ranks by the scale-free score:
+
+    score_norm  =  - sum_t w_t <g_t, f(x_t) - f0(x_t)>  /  ( ||w g||_F * ||f0||_F )
     valid only if  drift_heldout <= 0.05  and  the weight delta's relative norm <= 0.10
+
+`score_norm` is a weighted cosine between your output change and the ideal direction, times the relative size of the
+change, so it does not depend on how large a shard's gradients happen to be. Under the drift cap it can never exceed
+sqrt(0.05), about 0.22. The raw first-order gain `-dL / sum w` is also reported.
+
+**Watch the train vs held-out gap.** On a real GLM-5.3 shard with about 1k training tokens, the reference tuner reaches
+score_norm 0.15 on train but only 0.002 on held-out rows: most of what it learns does not carry over to new texts.
+Closing that gap is the main thing to climb.
 
 The score is a cheap proxy. The real test is merging your expert into the full model and measuring
 held-out exam accuracy on GPU. We do that for the leaderboard leaders, and we demote proxy winners

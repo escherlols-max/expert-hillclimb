@@ -1,8 +1,8 @@
 """Reference CPU tuner: first-order objective + trust region, Adam, TRAIN rows only.
 
-    python tools/tune_expert.py --shard expert.npz --out overlay.npz --steps 400 --lam 30 --seed 0
+    python tools/tune_expert.py --shard expert.npz --out overlay.npz --steps 400 --lam 3 --seed 0
 
-Minimises  mean_w <g, f(x)>  +  lam * mean||f(x)-f0(x)||^2 / mean||f0(x)||^2  +  anchor * ||W-W0||^2/||W0||^2
+Minimises  mean_w <g, f(x)> / (RMS||w g|| * RMS||f0||)  +  lam * mean||f(x)-f0(x)||^2 / mean||f0(x)||^2  +  anchor * ||W-W0||^2/||W0||^2
 """
 import argparse
 
@@ -26,7 +26,7 @@ def main():
     ap.add_argument("--shard", required=True)
     ap.add_argument("--out", required=True)
     ap.add_argument("--steps", type=int, default=400)
-    ap.add_argument("--lam", type=float, default=30.0)
+    ap.add_argument("--lam", type=float, default=3.0)
     ap.add_argument("--anchor", type=float, default=1.0)
     ap.add_argument("--lr", type=float, default=1e-4)
     ap.add_argument("--batch", type=int, default=2048)
@@ -58,13 +58,15 @@ def main():
     with torch.no_grad():
         f0_all = fwd(x, *W0, gc, uc, fam)
     f0_scale = float((f0_all ** 2).sum(1).mean())
-    wsum = float(w.mean())
+    # scale-free linear term (matches score_norm in expert_math.evaluate): divide by RMS ||w g|| * RMS ||f0||,
+    # so --lam means the same thing on every shard whatever its gradient scale
+    lin_scale = float(((w[:, None] * g) ** 2).sum(1).mean().sqrt()) * f0_scale ** 0.5 + 1e-30
 
     for step in range(a.steps):
         idx = torch.randint(0, len(x), (min(a.batch, len(x)),))
         xb, wb, gb, f0 = x[idx], w[idx], g[idx], f0_all[idx]
         f = fwd(xb, *W, gc, uc, fam)
-        lin = (wb * (gb * (f - f0)).sum(1)).mean() / wsum
+        lin = (wb * (gb * (f - f0)).sum(1)).mean() / lin_scale
         drift = ((f - f0) ** 2).sum(1).mean() / f0_scale
         anc = sum(((p - q) ** 2).sum() for p, q in zip(W, W0)) / n0
         loss = lin + a.lam * drift + a.anchor * anc

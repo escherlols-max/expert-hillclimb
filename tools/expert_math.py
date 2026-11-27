@@ -60,26 +60,37 @@ def forward_shard(shard, x, W):
     return expert_forward(x, *W, shard["gate_cap"], shard["up_cap"], shard.get("family", "inkling2"))
 
 
-def evaluate(shard, W_new, split="heldout", batch=4096):
-    """Return (score, drift, rel_delta) for new weights against the shard's base weights."""
+def evaluate(shard, W_new, split="heldout", batch=4096, with_norm=False):
+    """Return (score, drift, rel_delta) for new weights against the shard's base weights.
+
+    with_norm=True also returns score_norm, the scale-free score used for leaderboards:
+        score_norm = -sum_t w_t <g_t, df_t> / ( ||w g||_F * ||f0||_F )
+    It is a weighted cosine between the output change and the ideal direction, times the relative size of the change,
+    so it does not depend on the shard's gradient scale. With drift <= 0.05 it is at most sqrt(0.05) ~ 0.22."""
     W0 = weights(shard)
     x, w, g = shard["x_" + split], shard["w_" + split], shard["g_" + split]
     dL = 0.0
     num = 0.0
     den = 0.0
+    wg2 = 0.0
     for i in range(0, len(x), batch):
         xb = x[i:i + batch]
         f0 = forward_shard(shard, xb, W0)
         f1 = forward_shard(shard, xb, W_new)
         diff = f1 - f0
-        dL += float(np.sum(w[i:i + batch] * np.sum(g[i:i + batch] * diff, axis=1)))
+        wgb = w[i:i + batch, None] * g[i:i + batch]
+        dL += float(np.sum(wgb * diff))
         num += float(np.sum(diff * diff))
         den += float(np.sum(f0 * f0))
+        wg2 += float(np.sum(wgb * wgb))
     score = -dL / float(np.sum(w))
     drift = num / max(den, 1e-12)
     d2 = sum(float(np.sum((a - b) ** 2)) for a, b in zip(W_new, W0))
     n2 = sum(float(np.sum(b ** 2)) for b in W0)
     rel_delta = (d2 / max(n2, 1e-12)) ** 0.5
+    if with_norm:
+        score_norm = -dL / max((wg2 ** 0.5) * (den ** 0.5), 1e-30)
+        return score, drift, rel_delta, score_norm
     return score, drift, rel_delta
 
 

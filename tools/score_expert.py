@@ -33,15 +33,17 @@ def main():
         if new.shape != old.shape:
             raise SystemExit(f"shape mismatch {new.shape} vs {old.shape}")
 
-    score, drift, rel = evaluate(shard, W_new, "heldout")
-    tscore, tdrift, _ = evaluate(shard, W_new, "train")
+    score, drift, rel, snorm = evaluate(shard, W_new, "heldout", with_norm=True)
+    tscore, tdrift, _, tnorm = evaluate(shard, W_new, "train", with_norm=True)
     valid = drift <= MAX_DRIFT and rel <= MAX_REL_DELTA
     rep = {
         "shard_sha256": sha256(a.shard),
         "overlay_sha256": sha256(a.overlay),
+        "score_norm_heldout": snorm,
         "score_heldout": score,
         "drift_heldout": drift,
         "rel_weight_delta": rel,
+        "score_norm_train": tnorm,
         "score_train": tscore,
         "drift_train": tdrift,
         "valid": valid,
@@ -50,8 +52,8 @@ def main():
     }
     with open(a.report, "w", encoding="utf-8") as f:
         json.dump(rep, f, indent=2)
-    print(f"score={score:.6g} drift={drift:.4f} rel_delta={rel:.4f} "
-          f"(train score={tscore:.6g}) {'VALID' if valid else 'INVALID'}")
+    print(f"score_norm={snorm:.5f} drift={drift:.4f} rel_delta={rel:.4f} (raw score={score:.6g}; "
+          f"train score_norm={tnorm:.5f}) {'VALID' if valid else 'INVALID'}")
 
 
 if __name__ == "__main__":

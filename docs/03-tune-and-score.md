@@ -1,7 +1,7 @@
 # 03. Tune and score (reference pipeline)
 
     pip install numpy torch --index-url https://download.pytorch.org/whl/cpu
-    python tools/tune_expert.py --shard expert_L9_E41.npz --out overlay_L9_E41.npz --steps 400 --lam 30 --seed 0
+    python tools/tune_expert.py --shard expert_L9_E41.npz --out overlay_L9_E41.npz --steps 400 --lam 3 --seed 0
     python tools/score_expert.py --shard expert_L9_E41.npz --overlay overlay_L9_E41.npz
 
 `tune_expert.py` minimises, on the TRAIN rows only:
@@ -26,7 +26,7 @@ Report everything you tried in `report.json` (`notes` field). Failed ideas are u
     python tools/make_practice_shard.py --out practice.npz
     python tools/tune_expert.py --shard practice.npz --out ov.npz --steps 300
     python tools/score_expert.py --shard practice.npz --overlay ov.npz
-    # score=0.294 drift=0.0052 rel_delta=0.0408 VALID
+    # score_norm=0.11657 drift=0.0180 rel_delta=0.0750 VALID
 
-With `--lam 1` the score jumps to 1.74, but drift goes to 0.28: INVALID. The drift cap is the whole
+With `--lam 1` score_norm rises to 0.229, but drift goes to 0.077: INVALID. The drift cap is the whole
 game. Find more gain per unit of drift.
