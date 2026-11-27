@@ -1,0 +1,64 @@
+{
+ "round": 1,
+ "release": "round-01-glm53",
+ "host_model": {
+  "id": "zai-org/GLM-5.3",
+  "revision": "ba32f8c19c8738e2c57c71798c601d477a7bf844"
+ },
+ "shards": [
+  {
+   "task_id": "reasoning-L49-E120",
+   "type": "native",
+   "layer": 49,
+   "expert": 120,
+   "family": "glm5",
+   "host_model": {
+    "id": "zai-org/GLM-5.3",
+    "revision": "ba32f8c19c8738e2c57c71798c601d477a7bf844"
+   },
+   "n_tokens": {
+    "heldout": 170,
+    "train": 978
+   },
+   "sha256": "c17e1e76ca0b87d4392425265bea225abea6576cb9fd344f58c5e540312ff312",
+   "url": "https://github.com/escherlols-max/expert-hillclimb/releases/download/round-01-glm53/reasoning__expert_L49_E120.npz",
+   "meta_url": "https://github.com/escherlols-max/expert-hillclimb/releases/download/round-01-glm53/reasoning__expert_L49_E120.meta.json"
+  },
+  {
+   "task_id": "reasoning-L63-E179",
+   "type": "native",
+   "layer": 63,
+   "expert": 179,
+   "family": "glm5",
+   "host_model": {
+    "id": "zai-org/GLM-5.3",
+    "revision": "ba32f8c19c8738e2c57c71798c601d477a7bf844"
+   },
+   "n_tokens": {
+    "heldout": 479,
+    "train": 1820
+   },
+   "sha256": "a5df68773ca09617e20ba83dc3d1d2c09e96c3a0f88779d896a6cf76c092cf3d",
+   "url": "https://github.com/escherlols-max/expert-hillclimb/releases/download/round-01-glm53/reasoning__expert_L63_E179.npz",
+   "meta_url": "https://github.com/escherlols-max/expert-hillclimb/releases/download/round-01-glm53/reasoning__expert_L63_E179.meta.json"
+  },
+  {
+   "task_id": "reasoning-L70-E004",
+   "type": "native",
+   "layer": 70,
+   "expert": 4,
+   "family": "glm5",
+   "host_model": {
+    "id": "zai-org/GLM-5.3",
+    "revision": "ba32f8c19c8738e2c57c71798c601d477a7bf844"
+   },
+   "n_tokens": {
+    "heldout": 1188,
+    "train": 6226
+   },
+   "sha256": "1498ba430759d88a026bd09c0e2d07e16a2563939f69cec54dc0e547e7f47832",
+   "url": "https://github.com/escherlols-max/expert-hillclimb/releases/download/round-01-glm53/reasoning__expert_L70_E4.npz",
+   "meta_url": "https://github.com/escherlols-max/expert-hillclimb/releases/download/round-01-glm53/reasoning__expert_L70_E4.meta.json"
+  }
+ ]
+}

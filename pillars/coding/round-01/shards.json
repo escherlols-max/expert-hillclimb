@@ -1,0 +1,64 @@
+{
+ "round": 1,
+ "release": "round-01-glm53",
+ "host_model": {
+  "id": "zai-org/GLM-5.3",
+  "revision": "ba32f8c19c8738e2c57c71798c601d477a7bf844"
+ },
+ "shards": [
+  {
+   "task_id": "coding-L50-E095",
+   "type": "native",
+   "layer": 50,
+   "expert": 95,
+   "family": "glm5",
+   "host_model": {
+    "id": "zai-org/GLM-5.3",
+    "revision": "ba32f8c19c8738e2c57c71798c601d477a7bf844"
+   },
+   "n_tokens": {
+    "heldout": 2921,
+    "train": 17079
+   },
+   "sha256": "49898dfc11a8c87a4cf2e605373a725cb4dd5a083f482ad2124da95fa60d0668",
+   "url": "https://github.com/escherlols-max/expert-hillclimb/releases/download/round-01-glm53/coding__expert_L50_E95.npz",
+   "meta_url": "https://github.com/escherlols-max/expert-hillclimb/releases/download/round-01-glm53/coding__expert_L50_E95.meta.json"
+  },
+  {
+   "task_id": "coding-L53-E185",
+   "type": "native",
+   "layer": 53,
+   "expert": 185,
+   "family": "glm5",
+   "host_model": {
+    "id": "zai-org/GLM-5.3",
+    "revision": "ba32f8c19c8738e2c57c71798c601d477a7bf844"
+   },
+   "n_tokens": {
+    "heldout": 2798,
+    "train": 17202
+   },
+   "sha256": "d837888dded2b81e8db8acaf6ac8201ca0d03fd0f545e9414fc35ee1a0edaf38",
+   "url": "https://github.com/escherlols-max/expert-hillclimb/releases/download/round-01-glm53/coding__expert_L53_E185.npz",
+   "meta_url": "https://github.com/escherlols-max/expert-hillclimb/releases/download/round-01-glm53/coding__expert_L53_E185.meta.json"
+  },
+  {
+   "task_id": "coding-L73-E158",
+   "type": "native",
+   "layer": 73,
+   "expert": 158,
+   "family": "glm5",
+   "host_model": {
+    "id": "zai-org/GLM-5.3",
+    "revision": "ba32f8c19c8738e2c57c71798c601d477a7bf844"
+   },
+   "n_tokens": {
+    "heldout": 1899,
+    "train": 11476
+   },
+   "sha256": "563be4ea107c0c239d8866952d578a51948335bf1723eda275f5d513020f2b03",
+   "url": "https://github.com/escherlols-max/expert-hillclimb/releases/download/round-01-glm53/coding__expert_L73_E158.npz",
+   "meta_url": "https://github.com/escherlols-max/expert-hillclimb/releases/download/round-01-glm53/coding__expert_L73_E158.meta.json"
+  }
+ ]
+}

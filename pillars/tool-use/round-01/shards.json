@@ -1,0 +1,46 @@
+{
+ "round": 1,
+ "release": "round-01-glm53",
+ "host_model": {
+  "id": "zai-org/GLM-5.3",
+  "revision": "ba32f8c19c8738e2c57c71798c601d477a7bf844"
+ },
+ "shards": [
+  {
+   "task_id": "tool-use-L52-E024",
+   "type": "native",
+   "layer": 52,
+   "expert": 24,
+   "family": "glm5",
+   "host_model": {
+    "id": "zai-org/GLM-5.3",
+    "revision": "ba32f8c19c8738e2c57c71798c601d477a7bf844"
+   },
+   "n_tokens": {
+    "heldout": 1123,
+    "train": 6531
+   },
+   "sha256": "cbea652559cf3538906b8db52980d650d1e6a0920fbcbe3873d29c3b620331d9",
+   "url": "https://github.com/escherlols-max/expert-hillclimb/releases/download/round-01-glm53/tool-use__expert_L52_E24.npz",
+   "meta_url": "https://github.com/escherlols-max/expert-hillclimb/releases/download/round-01-glm53/tool-use__expert_L52_E24.meta.json"
+  },
+  {
+   "task_id": "tool-use-L62-E253",
+   "type": "native",
+   "layer": 62,
+   "expert": 253,
+   "family": "glm5",
+   "host_model": {
+    "id": "zai-org/GLM-5.3",
+    "revision": "ba32f8c19c8738e2c57c71798c601d477a7bf844"
+   },
+   "n_tokens": {
+    "heldout": 317,
+    "train": 1365
+   },
+   "sha256": "495e0ccb4759b58d329d76264deba247f49411c76e789b35b8918717c57e4406",
+   "url": "https://github.com/escherlols-max/expert-hillclimb/releases/download/round-01-glm53/tool-use__expert_L62_E253.npz",
+   "meta_url": "https://github.com/escherlols-max/expert-hillclimb/releases/download/round-01-glm53/tool-use__expert_L62_E253.meta.json"
+  }
+ ]
+}

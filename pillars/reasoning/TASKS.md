@@ -4,17 +4,17 @@
 
 **Target texts:** checkable final answers (ANSWER: line) graded by execution or exact match.
 
-## Open tasks (round-01)
+## Open tasks (round-01, GLM-5.3)
 
-Not released yet. When round-01 shards are exported, this file lists one line per expert task:
+Shards are release assets of `round-01-glm53`; index: `pillars/reasoning/round-01/shards.json`. Check sha256 before tuning.
 
-    | task id | type | layer | expert | n_tokens | shard | current best |
-    |---|---|---|---|---|---|---|
-    | reasoning-L09-E041 | native | 9 | 41 | 18,204 | (release link) | - |
-    | reasoning-X-qwen-L12 | translated | 12 | parent 41 | ... | ... | - |
+| task id | layer | expert | train / heldout tokens | shard | current best |
+|---|---|---|---|---|---|
+| reasoning-L49-E120 | 49 | 120 | 978 / 170 | [npz](https://github.com/escherlols-max/expert-hillclimb/releases/download/round-01-glm53/reasoning__expert_L49_E120.npz) | - |
+| reasoning-L63-E179 | 63 | 179 | 1,820 / 479 | [npz](https://github.com/escherlols-max/expert-hillclimb/releases/download/round-01-glm53/reasoning__expert_L63_E179.npz) | - |
+| reasoning-L70-E004 | 70 | 4 | 6,226 / 1,188 | [npz](https://github.com/escherlols-max/expert-hillclimb/releases/download/round-01-glm53/reasoning__expert_L70_E4.npz) | - |
 
-Experts are chosen per pillar by routing statistics: the experts that the router uses most on this
-pillar's target texts, and least on other pillars.
+Experts were picked by routing lift (fires most on this pillar's texts vs the other pillars) in layers 40-77.
 
 ## Practise now
 Use `tools/make_practice_shard.py` (see `docs/03-tune-and-score.md`).

@@ -51,4 +51,6 @@ Full rules are in `docs/05-submit.md`.
 
 ## Status
 
-**Temporary public repo.** Code lands in `tools/` as it is verified. Shards are published per pillar when the GPU export runs. Until then, the tutorials use the tiny synthetic model in `tools/` so you can practise end to end.
+**Temporary public repo.** Round 01 is live for **GLM-5.3** (`zai-org/GLM-5.3`): 8 expert shards across coding, reasoning
+and tool-use, as assets of the `round-01-glm53` release. Each pillar's `TASKS.md` links its shards. Leaderboards rank by
+`score_norm` (see `docs/01-concepts.md`). The practice shard in `tools/` still works for a dry run.
