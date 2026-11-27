@@ -1,0 +1,20 @@
+name: smoke
+on: [push, pull_request]
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.11"}
+      - run: pip install numpy torch --index-url https://download.pytorch.org/whl/cpu
+      - name: practice loop
+        working-directory: tools
+        run: |
+          python make_practice_shard.py --out /tmp/p.npz
+          python tune_expert.py --shard /tmp/p.npz --out /tmp/o.npz --steps 300 --threads 2
+          python score_expert.py --shard /tmp/p.npz --overlay /tmp/o.npz --report /tmp/r.json
+          python -c "import json; r=json.load(open('/tmp/r.json')); assert r['valid'] and r['score_heldout']>0, r"
+          python fit_procrustes.py --selftest
+      - name: no em dashes in text
+        run: "! grep -rnP '\x{2014}' --include='*.md' --include='*.py' ."

@@ -1,0 +1,8 @@
+*.npz
+!submissions/**/overlay.npz
+__pycache__/
+*.pyc
+.env
+*.key
+report.json
+!submissions/**/report.json

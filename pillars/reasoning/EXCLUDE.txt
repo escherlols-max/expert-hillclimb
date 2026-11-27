@@ -1,0 +1,1 @@
+# Held-out exam fingerprints (sha256 of normalised question text), one per line. Published with round-01.

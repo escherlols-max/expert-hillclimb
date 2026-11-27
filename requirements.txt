@@ -1,0 +1,2 @@
+numpy>=1.26
+torch>=2.3  # CPU wheel is enough: --index-url https://download.pytorch.org/whl/cpu
